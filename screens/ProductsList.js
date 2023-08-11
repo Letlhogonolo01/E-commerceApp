@@ -3,6 +3,8 @@ import { View, Text, FlatList, StyleSheet } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { getProducts } from "../services/ProductsService";
 import { Product } from "../components/Product";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Button from "../components/Button";
 
 export function ProductsList({ navigation }) {
   function renderProduct({ item: product }) {
@@ -28,18 +30,50 @@ export function ProductsList({ navigation }) {
     }, [])
   );
 
+  const [userDetails, setUserDetails] = React.useState();
+  React.useEffect(() => {
+    getUserData();
+  }, []);
+
+  const getUserData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+    if (userData) {
+      setUserDetails(JSON.parse(userData));
+    }
+  };
+
+  const logout = () => {
+    AsyncStorage.setItem(
+      "userData",
+      JSON.stringify({ ...userDetails, loggedIn: false })
+    );
+    navigation.navigate("LoginScreen");
+  };
+
   return (
-    <FlatList
-      style={styles.productsList}
-      contentContainerStyle={styles.productsListContainer}
-      keyExtractor={(item) => item.id.toString()}
-      data={products}
-      renderItem={renderProduct}
-    />
+    <>
+      <View style={styles.container}>
+        <FlatList
+          style={styles.productsList}
+          contentContainerStyle={styles.productsListContainer}
+          keyExtractor={(item) => item.id.toString()}
+          data={products}
+          renderItem={renderProduct}
+        />
+        <View>
+          <Button title="Logout" onPress={logout} />
+        </View>
+      </View>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+  },
   productsList: {
     backgroundColor: "#eeeeee",
   },

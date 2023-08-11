@@ -1,54 +1,4 @@
-// import React, { useRef } from "react";
-// import { Paystack, paystackProps } from "react-native-paystack-webview";
-// import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-
-// export default function Payment() {
-//   const paystackWebViewRef = useRef(paystackProps.PayStackRef);
-
-//   return (
-//     <View style={{ marginHorizontal: 15 }}>
-//       <Paystack
-//         paystackKey="pk_test_9bd0b90f467cc03ec7bc74e417b58fb978f6da87"
-//         paystackSecretKey="sk_test_43d3ca891624d90232ff726ab9012234efcbae1f"
-//         billingEmail="letlhogonolo.moroke8@gmail.com"
-//         billingName="Letlhogogonolo Tlhogi"
-//         billingMobile="0676260399"
-//         amount={1000}
-//         currency="ZAR"
-//         onCancel={(e) => {
-//           console.log(e);
-//         }}
-//         onSuccess={(res) => {
-//           console.log(res);
-//         }}
-//         ref={paystackWebViewRef}
-//       />
-//       <TouchableOpacity
-//         onPress={() => paystackWebViewRef.current.startTransaction()}
-//         style={styles.paystack}
-//       >
-//         <Text style={styles.pay}>Pay Now</Text>
-//       </TouchableOpacity>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   paystack: {
-//     minWidth: "60%",
-//     backgroundColor: "#F9A826",
-//     padding: 10,
-//     borderRadius: 15,
-//     justifyContent: "center",
-//     alignItems: "center",
-//   },
-//   pay: {
-//     color: "white",
-//   },
-// });
-
-// ..........................................................................//
-
+import React from "react";
 import { useState } from "react";
 import { RootSiblingParent } from "react-native-root-siblings";
 import Toast from "react-native-root-toast";
@@ -62,6 +12,7 @@ import {
 } from "react-native";
 import { Paystack } from "react-native-paystack-webview";
 import { useRoute, useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Payment() {
   const [pay, setPay] = useState(false);
@@ -75,21 +26,25 @@ export default function Payment() {
   const { params } = useRoute();
   const total = params?.total || 0;
 
+  const [userDetails, setUserDetails] = React.useState();
+  React.useEffect(() => {
+    getUserData();
+  }, []);
+
+  const getUserData = async () => {
+    const userData = await AsyncStorage.getItem("userData");
+    if (userData) {
+      setUserDetails(JSON.parse(userData));
+    }
+  };
+
   const handleOnchange = (text, input) => {
     setBillingDetail((prevState) => ({ ...prevState, [input]: text }));
   };
 
   const handleSubmit = () => {
-    if (
-      billingDetail.billingName &&
-      billingDetail.billingEmail &&
-      billingDetail.billingMobile
-    ) {
+    if (userDetails?.fullname && userDetails?.email && userDetails?.phone) {
       setPay(true);
-    } else {
-      Toast.show("Fill in all fields", {
-        duration: Toast.durations.LONG,
-      });
     }
   };
 
@@ -104,19 +59,19 @@ export default function Payment() {
             style={styles.input}
             placeholder="Billing Name"
             onChangeText={(text) => handleOnchange(text, "billingName")}
-            value={billingDetail?.billingName}
+            value={userDetails?.fullname}
           />
           <TextInput
             style={styles.input}
             placeholder="Billing Email"
             onChangeText={(text) => handleOnchange(text, "billingEmail")}
-            value={billingDetail?.billingEmail}
+            value={userDetails?.email}
           />
           <TextInput
             style={styles.input}
             placeholder="Billing Mobile"
             onChangeText={(text) => handleOnchange(text, "billingMobile")}
-            value={billingDetail?.billingMobile}
+            value={userDetails?.phone}
           />
           {/* <TextInput
             style={styles.input}
@@ -136,8 +91,9 @@ export default function Payment() {
             <View style={{ flex: 1 }}>
               <Paystack
                 paystackKey="pk_test_9bd0b90f467cc03ec7bc74e417b58fb978f6da87"
-                billingEmail={billingDetail.billingEmail}
-                billingMobile={billingDetail.billingMobile}
+                billingName={userDetails?.fullname}
+                billingEmail={userDetails?.email}
+                billingMobile={userDetails?.phone}
                 currency="ZAR"
                 amount={total * 1}
                 activityIndicatorColor="green"
